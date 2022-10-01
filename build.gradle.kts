@@ -33,6 +33,15 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "among-demo"
             packageVersion = "1.0.0"
+            // macOS { TODO online converters fail for some reason?
+            //     iconFile.set(project.file("logo.icns"))
+            // }
+            windows {
+                iconFile.set(project.file("logo.ico"))
+            }
+            linux {
+                iconFile.set(project.file("logo.png"))
+            }
         }
     }
 }
