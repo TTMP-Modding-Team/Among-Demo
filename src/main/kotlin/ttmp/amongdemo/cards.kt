@@ -13,12 +13,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import ttmp.among.AmongEngine
 import ttmp.among.compile.CompileResult
-import ttmp.among.compile.Report
+import ttmp.among.compile.ReportType
 import ttmp.among.compile.Source
-import ttmp.among.definition.MacroDefinition
-import ttmp.among.definition.MacroParameterList
-import ttmp.among.definition.MacroType
-import ttmp.among.definition.OperatorDefinition
+import ttmp.among.definition.*
 import ttmp.among.obj.Among
 import ttmp.among.util.LnCol
 import kotlin.time.ExperimentalTime
@@ -27,9 +24,9 @@ import kotlin.time.measureTime
 sealed class Card {
     data class SuccessCard(val milliseconds: Long) : Card()
     data class FailureCard(val errors: Int, val warnings: Int) : Card()
-    data class ReportCard(val type: Report.ReportType, val reportMessage: String, val lnCol: LnCol? = null) : Card()
+    data class ReportCard(val type: ReportType, val reportMessage: String, val lnCol: LnCol? = null) : Card()
     data class AmongCard(val among: Among) : Card()
-    data class MacroCard(val macro: MacroDefinition) : Card()
+    data class MacroCard(val macro: Macro) : Card()
     data class OperatorCard(val operator: OperatorDefinition) : Card()
 }
 
@@ -56,15 +53,18 @@ fun CardWidget(card: Card) {
         }
         is Card.MacroCard -> CardBorder {
             Row {
-                Text("Macro", modifier = Modifier.padding(3.dp))
+                Text(
+                    if (card.macro.type().isFunctionMacro) "Function" else "Macro",
+                    modifier = Modifier.padding(3.dp)
+                )
                 VerticalDiv()
                 val notEmpty = !card.macro.parameter().isEmpty
                 Text(
                     when (card.macro.type()) {
-                        MacroType.CONST -> card.macro.name() + ":"
-                        MacroType.OBJECT -> card.macro.name() + if (notEmpty) "{" else "{}:"
-                        MacroType.LIST -> card.macro.name() + if (notEmpty) "[" else "[]:"
-                        MacroType.OPERATION -> card.macro.name() + if (notEmpty) "(" else "():"
+                        MacroType.CONST, MacroType.ACCESS -> card.macro.name() + ":"
+                        MacroType.OBJECT, MacroType.OBJECT_FN -> card.macro.name() + if (notEmpty) "{" else "{}:"
+                        MacroType.LIST, MacroType.LIST_FN -> card.macro.name() + if (notEmpty) "[" else "[]:"
+                        MacroType.OPERATION, MacroType.OPERATION_FN -> card.macro.name() + if (notEmpty) "(" else "():"
                     }, modifier = Modifier.padding(3.dp)
                 )
             }
@@ -79,7 +79,9 @@ fun CardWidget(card: Card) {
                 HorizontalDiv()
                 Text(closing, modifier = Modifier.padding(3.dp))
             }
-            AmongWidget(card.macro.template())
+            if (card.macro is MacroDefinition)
+                AmongWidget(card.macro.template())
+            else Text("/* code-defined macro */")
         }
         is Card.OperatorCard -> CardBorder {
             Text("Operator", modifier = Modifier.padding(3.dp))
@@ -161,19 +163,19 @@ private fun amongWidget(value: Among, valueToWidget: @Composable (@Composable ()
     if (value.isPrimitive) valueToWidget {
         Text("\"${value.asPrimitive().value}\"", modifier = Modifier.padding(3.dp))
     } else CardBorder {
-        val named = value.asNamed()
-        val type = if (named.isList) "List" else "Object"
+        val nameable = value.asNameable()
+        val type = if (nameable.isList) "List" else "Object"
         valueToWidget {
-            if (named.hasName()) {
+            if (nameable.hasName()) {
                 Row {
                     Text(type, modifier = Modifier.padding(3.dp))
                     VerticalDiv()
-                    Text(named.name, modifier = Modifier.padding(3.dp))
+                    Text(nameable.name, modifier = Modifier.padding(3.dp))
                 }
             } else Text(type, modifier = Modifier.padding(3.dp))
         }
-        if (named.isObj) Obj(named.asObj().properties())
-        else List(named.asList().values())
+        if (nameable.isObj) Obj(nameable.asObj().properties())
+        else List(nameable.asList().values())
     }
 }
 
@@ -205,18 +207,18 @@ fun amongToCards(sourceString: String): List<Card> {
 
     if (!res.isSuccess) {
         list += Card.FailureCard(
-            res.reports().count { it.type() == Report.ReportType.ERROR },
-            res.reports().count { it.type() == Report.ReportType.WARN })
+            res.reports().count { it.type() == ReportType.ERROR },
+            res.reports().count { it.type() == ReportType.WARN })
     } else list += Card.SuccessCard(time.inWholeMilliseconds)
     for (r in res.reports()) {
         list += Card.ReportCard(r.type(), r.message(), r.getLineColumn(src))
     }
     if (res.isSuccess) {
-        for (macro in res.definition().macros().values) {
+        for (macro in res.definition().macros().allMacros()) {
             list += Card.MacroCard(macro)
         }
-        res.definition().operators().forEachOperatorAndKeyword {
-            list += Card.OperatorCard(it)
+        for (operator in res.definition().operators().allOperators()) {
+            list += Card.OperatorCard(operator)
         }
         for (o in res.root().objects()) {
             list += Card.AmongCard(o)

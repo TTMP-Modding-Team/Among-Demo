@@ -19,7 +19,7 @@ repositories {
 dependencies {
     implementation(compose.desktop.currentOs)
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
-    implementation(files("libs/among-0.1.0.jar"))
+    implementation(files("libs/among-0.2.0.jar"))
 }
 
 tasks.withType<KotlinCompile>() {
