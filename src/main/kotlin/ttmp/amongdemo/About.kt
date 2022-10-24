@@ -31,7 +31,7 @@ fun About() {
             Text("Among Demo")
             Spacer(modifier = Modifier.width(30.dp))
             Row {
-                Text("Among v.0.2.0")
+                Text("Among v.0.3.0")
                 Spacer(modifier = Modifier.width(30.dp))
                 Text("Among Demo v.0.1.0")
             }
