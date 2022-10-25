@@ -70,9 +70,9 @@ fun CardWidget(card: Card) {
             }
             if (!card.macro.parameter().isEmpty) {
                 val closing = when (card.macro.type()) {
-                    MacroType.OBJECT -> "} :"
-                    MacroType.LIST -> "] :"
-                    MacroType.OPERATION -> ") :"
+                    MacroType.OBJECT, MacroType.OBJECT_FN -> "} :"
+                    MacroType.LIST, MacroType.LIST_FN -> "] :"
+                    MacroType.OPERATION, MacroType.OPERATION_FN -> ") :"
                     else -> error("Unreachable")
                 }
                 Parameters(card.macro.parameter())
