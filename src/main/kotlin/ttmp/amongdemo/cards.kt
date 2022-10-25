@@ -1,5 +1,6 @@
 package ttmp.amongdemo
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -10,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import ttmp.among.AmongEngine
 import ttmp.among.compile.CompileResult
@@ -28,6 +30,7 @@ sealed class Card {
     data class AmongCard(val among: Among) : Card()
     data class MacroCard(val macro: Macro) : Card()
     data class OperatorCard(val operator: OperatorDefinition) : Card()
+    object SusCard : Card()
 }
 
 @Composable
@@ -87,6 +90,13 @@ fun CardWidget(card: Card) {
             Text("Operator", modifier = Modifier.padding(3.dp))
             HorizontalDiv()
             Text(card.operator.toString(), modifier = Modifier.padding(3.dp))
+        }
+        Card.SusCard -> CardBorder {
+            Image(
+                painterResource("sus.webp"),
+                "When the imposter is sus!😳",
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }
@@ -221,7 +231,9 @@ fun amongToCards(sourceString: String): List<Card> {
             list += Card.OperatorCard(operator)
         }
         for (o in res.root().objects()) {
-            list += Card.AmongCard(o)
+            if (o.isPrimitive && o.asPrimitive().value.contains("when the imposter is sus", ignoreCase = true))
+                list += Card.SusCard
+            else list += Card.AmongCard(o)
         }
     }
     return list
