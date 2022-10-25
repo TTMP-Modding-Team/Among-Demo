@@ -46,7 +46,7 @@ fun App() {
                 Switch(checked = showAnalysis, onCheckedChange = { showAnalysis = it })
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Hyperlink(URI.create("https://github.com/TTMP-Modding-Team/Among"), "Docs", fontSize = 10.sp)
+                Hyperlink(URI.create("https://github.com/TTMP-Modding-Team/Among/wiki"), "Docs", fontSize = 10.sp)
                 IconButton(onClick = { ScreenManager.aboutScreen() }) {
                     Image(
                         img("logo.png"),
